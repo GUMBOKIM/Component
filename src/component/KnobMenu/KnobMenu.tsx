@@ -1,5 +1,6 @@
 import * as S from "./KnobMenu.style";
 import {useEffect, useRef} from "react";
+import {calculateDegree, Location} from "./KnobMenu.util";
 
 const KnobMenu = () => {
     const circleRef = useRef<HTMLUListElement>(null);
@@ -7,11 +8,14 @@ const KnobMenu = () => {
     useEffect(() => {
         const circle = circleRef.current;
         if (circle) {
-            const childCount = circle.childElementCount;
-            const r = circle.clientWidth / 2;
-            const distanceCenterFromItem = r / 2;
-            const childSize = {width: circle.children[0].clientWidth, height: circle.children[0].clientHeight}
+            const {x: refX, y: refY,  width} = circle.getBoundingClientRect();
+            const r = width / 2;
+            const circleCenter: Location = {x: refX + r, y: refY + r};
 
+            const distanceCenterFromItem = r / 2;
+
+            const childCount = circle.childElementCount;
+            const childSize = {width: circle.children[0].clientWidth, height: circle.children[0].clientHeight}
             // ITEM 정렬
             for (let i = 0; i < childCount; i++) {
                 const item = circle.children[i] as HTMLLIElement;
@@ -19,25 +23,30 @@ const KnobMenu = () => {
                 const y = r + Math.sin(i / childCount * Math.PI * 2) * distanceCenterFromItem;
                 item.style.top = (x - childSize.width / 2) + "px";
                 item.style.left = (y - childSize.height / 2) + "px";
-                item.style.transform = `rotate(${i / childCount * Math.PI * 2}rad)`
+                item.style.transform = `rotate(${i / childCount * 360}deg)`
             }
 
             // 회전 이벤트
-            const circleRotateRad = 0;
-            const dragStartLocation = {x: 0, y: 0};
+            let circleRotatedDegree = 0;
+            let startRad = 0;
 
             const mouseMoveEvent = (e: MouseEvent) => {
+                const nowDegree = calculateDegree(circleCenter, {x: e.clientX, y: e.clientY});
+                const moveDegree = nowDegree - startRad;
+                circle.style.transform = `rotate(${circleRotatedDegree + moveDegree}deg)`
+
                 e.stopPropagation();
-                console.log(e, e.x, e.y);
             }
             circle.addEventListener('mousedown', (e) => {
-                const {x, y} = e;
-                dragStartLocation.x = x;
-                dragStartLocation.y = y;
+                startRad = calculateDegree(circleCenter, {x: e.clientX, y: e.clientY});
+
                 circle.addEventListener('mousemove', mouseMoveEvent)
             });
 
             circle.addEventListener('mouseup', (e) => {
+                const nowDegree = calculateDegree(circleCenter, {x: e.clientX, y: e.clientY});
+                const moveRad = nowDegree - startRad;
+                circleRotatedDegree = circleRotatedDegree + moveRad;
                 circle.removeEventListener('mousemove', mouseMoveEvent)
             })
 
@@ -53,7 +62,7 @@ const KnobMenu = () => {
                             <button onClick={() => alert(`item${item} click!!`)}>
                                 Item{item}
                             </button>
-                            </S.Item>
+                        </S.Item>
                     )}
                 </>
             </S.Circle>

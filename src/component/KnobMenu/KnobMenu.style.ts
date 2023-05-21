@@ -4,6 +4,7 @@ export const Container = styled.div`
   position: relative;
   width: 400px;
   height: 400px;
+  margin: 100px;
 `;
 
 export const Circle = styled.ul`
